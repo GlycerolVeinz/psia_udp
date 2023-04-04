@@ -5,19 +5,20 @@
 #include "stdafx.h"
 #include <winsock2.h>
 #include "ws2tcpip.h"
+#include <stdint.h>
 
-#define TARGET_IP	"147.32.221.11"
+#define TARGET_IP	"147.32.221.18"
 
 #define BUFFERS_LEN 1024
 
-#define SENDER
-//#define RECEIVER
 
+#define SENDER
 #ifdef SENDER
 #define TARGET_PORT 5020
 #define LOCAL_PORT 5002
 #endif // SENDER
 
+//#define RECEIVER
 #ifdef RECEIVER
 #define TARGET_PORT 5002
 #define LOCAL_PORT 5020
@@ -39,10 +40,6 @@ int main()
 	struct sockaddr_in local;
 	struct sockaddr_in from;
 	
-	char* file_name;
-	scanf("%s", &file_name);
-
-	
 	int fromlen = sizeof(from);
 	local.sin_family = AF_INET;
 	local.sin_port = htons(LOCAL_PORT);
@@ -61,27 +58,37 @@ int main()
 	char buffer_tx[BUFFERS_LEN];
 	
 	
+	char* file_name;
+	printf("enter_file:");
+	scanf("%s", &file_name);
 	FILE *opened_file = fopen(file_name, "rb");
 	if (!opened_file) {
 		exit(100);
 	}
 	
+	uint32_t position = 0;
 
-#ifdef SENDER
+	while (feof(opened_file)) {
+		char file_line[BUFFERS_LEN - 4];
+		fread(file_line, sizeof(char), BUFFERS_LEN - 4, opened_file);
+
+	#ifdef SENDER
 	
-	sockaddr_in addrDest;
-	addrDest.sin_family = AF_INET;
-	addrDest.sin_port = htons(TARGET_PORT);
-	InetPton(AF_INET, _T(TARGET_IP), &addrDest.sin_addr.s_addr);
+		sockaddr_in addrDest;
+		addrDest.sin_family = AF_INET;
+		addrDest.sin_port = htons(TARGET_PORT);
+		InetPton(AF_INET, _T(TARGET_IP), &addrDest.sin_addr.s_addr);
 
-	
-	strncpy(buffer_tx, "My name is Matty\n", BUFFERS_LEN); //put some data to buffer
-	printf("Sending packet.\n");
-	sendto(socketS, buffer_tx, strlen(buffer_tx), 0, (sockaddr*)&addrDest, sizeof(addrDest));	
+		memcpy((void*)buffer_tx, (void*)&position, sizeof(uint32_t));
+		strncpy(buffer_tx + 4, file_line, BUFFERS_LEN); //put some data to buffer
 
-	closesocket(socketS);
+		printf("Sending packet.\n");
+		sendto(socketS, buffer_tx, strlen(buffer_tx), 0, (sockaddr*)&addrDest, sizeof(addrDest));	
 
-#endif // SENDER
+		closesocket(socketS);
+
+	#endif // SENDER
+	}
 
 #ifdef RECEIVER
 
