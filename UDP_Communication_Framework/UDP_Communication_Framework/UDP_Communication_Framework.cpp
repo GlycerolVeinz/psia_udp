@@ -6,6 +6,8 @@
 #include <winsock2.h>
 #include "ws2tcpip.h"
 #include <stdint.h>
+#include <string.h>
+#include <string>
 
 #define TARGET_IP	"147.32.221.18"
 
@@ -57,20 +59,19 @@ int main()
 	char buffer_rx[BUFFERS_LEN];
 	char buffer_tx[BUFFERS_LEN];
 	
-	
-	char* file_name;
-	printf("enter_file:");
-	scanf("%s", &file_name);
+	char* const file_name = "send_txt.txt";
+	//printf("enter_file:");
+	//scanf("%s", &file_name);
 	FILE *opened_file = fopen(file_name, "rb");
 	if (!opened_file) {
 		exit(100);
 	}
 	
-	uint32_t position = 0;
+	//uint32_t position = 0;
 
-	while (feof(opened_file)) {
-		char file_line[BUFFERS_LEN - 4];
-		fread(file_line, sizeof(char), BUFFERS_LEN - 4, opened_file);
+	while (!feof(opened_file)) {
+		char file_line[BUFFERS_LEN];
+		fread(file_line, sizeof(char), BUFFERS_LEN, opened_file);
 
 	#ifdef SENDER
 	
@@ -79,16 +80,14 @@ int main()
 		addrDest.sin_port = htons(TARGET_PORT);
 		InetPton(AF_INET, _T(TARGET_IP), &addrDest.sin_addr.s_addr);
 
-		memcpy((void*)buffer_tx, (void*)&position, sizeof(uint32_t));
-		strncpy(buffer_tx + 4, file_line, BUFFERS_LEN); //put some data to buffer
+		//memcpy((void*)buffer_tx, (void*)&position, sizeof(uint32_t));
+		strncpy(buffer_tx, file_line, BUFFERS_LEN); //put some data to buffer
 
 		printf("Sending packet.\n");
-		sendto(socketS, buffer_tx, strlen(buffer_tx), 0, (sockaddr*)&addrDest, sizeof(addrDest));	
-
-		closesocket(socketS);
-
-	#endif // SENDER
+		sendto(socketS, buffer_tx, 1024, 0, (sockaddr*)&addrDest, sizeof(addrDest));	
 	}
+	closesocket(socketS);
+	#endif // SENDER
 
 #ifdef RECEIVER
 

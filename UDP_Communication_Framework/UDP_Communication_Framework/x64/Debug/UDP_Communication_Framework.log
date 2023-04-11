@@ -1,1 +1,3 @@
-﻿  UDP_Communication_Framework.vcxproj -> C:\Users\saframa9\psia_work\psia_cviceni\UDP_Communication_Framework\x64\Debug\UDP_Communication_Framework.exe
+﻿  UDP_Communication_Framework.cpp
+C:\Users\saframa9\psia_work\psia_cviceni\UDP_Communication_Framework\UDP_Communication_Framework\UDP_Communication_Framework.cpp(59,7): warning C4101: 'buffer_rx': unreferenced local variable
+  UDP_Communication_Framework.vcxproj -> C:\Users\saframa9\psia_work\psia_cviceni\UDP_Communication_Framework\x64\Debug\UDP_Communication_Framework.exe
