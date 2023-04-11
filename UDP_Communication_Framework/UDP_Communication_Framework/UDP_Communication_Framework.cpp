@@ -90,16 +90,22 @@ int main()
 	#endif // SENDER
 
 #ifdef RECEIVER
+	
+	char position[4];
 
-	strncpy(buffer_rx, "No data received.\n", BUFFERS_LEN);
-	printf("Waiting for datagram ...\n");
-	if(recvfrom(socketS, buffer_rx, sizeof(buffer_rx), 0, (sockaddr*)&from, &fromlen) == SOCKET_ERROR){
-		printf("Socket error!\n");
-		getchar();
-		return 1;
+	while (1) {
+		strncpy(buffer_rx, "No data received.\n", BUFFERS_LEN);
+		printf("Waiting for datagram ...\n");
+		if (recvfrom(socketS, position, sizeof(position), 0, (sockaddr*)&from, &fromlen) == SOCKET_ERROR) && recvfrom(socketS, buffer_rx, sizeof(buffer_rx), 0, (sockaddr*)&from, &fromlen) == SOCKET_ERROR) {
+			printf("Socket error!\n");
+			getchar();
+			return 1;
+		}
+		else {
+			printf("Datagram: %s", buffer_rx);
+			getchar();
+		}
 	}
-	else
-		printf("Datagram: %s", buffer_rx);
 
 	closesocket(socketS);
 #endif
