@@ -37,12 +37,14 @@ elif side == "R":
 	file_name, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
 	file_name = file_name.decode("utf-8")
 
+	# Create a file, where name is taken from sender
 	with open(file_name, "wb") as recieved_f:
 		package, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
-  
+
 		if package != c.START_MARKER:
 			raise Exception(c.ERROR_START_MARKER)
 
+		# Write data
 		while package != c.END_MARKER:
 			package, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
 
@@ -51,7 +53,8 @@ elif side == "R":
 				exit()
 
 			elif package != c.END_MARKER:
-				recieved_f.write(package[c.POSITION_SIZE:])
+				recieved_f.seek(int.from_bytes(package[0:c.POSITION_SIZE], byteorder="big"))
+				recieved_f.write(package[c.POSITION_SIZE:c.PACKAGE_SIZE])
 
 else:
 	print("Exiting without doing anything...")
