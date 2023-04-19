@@ -9,8 +9,17 @@ END_MARKER = b"//END//"
 SENDER_ERROR_MARKER = b"//SENDER_ERROR//"
 
 # FOR SENDER
+SENDER_IP = "147.32.221.17"
+SENDER_PORT = 5002
+SENDER_ADRESS = (SENDER_IP, SENDER_PORT)
+
+# FOR RECEIVER
 TARGET_IP = "147.32.221.18"
 TARGET_PORT = 5020
+TARGET_ADRESS = (TARGET_IP, TARGET_PORT)
+
 
 # ERROR MESSAGES
 ERROR_PACKAGE_SIZE = "Error: package size is bigger than maximum package size"
+ERROR_START_MARKER = "Error: start marker is not correct"
+ERROR_SENDER_ERROR = "Error: sender had an error"
