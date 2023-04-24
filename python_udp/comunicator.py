@@ -1,9 +1,11 @@
 # udp and network dependencies
 import socket
+import hashlib as hash
+import binascii
 
 # my libraries
 import const as c
-import util
+
 
 # UDP SOCKET
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -16,54 +18,67 @@ if side == "S":
 
     # Open binary file
     with open(FILE_NAME, "rb") as o_file:
+        # send file name and start marker
         sock.sendto(FILE_NAME.encode("utf-8"), c.TARGET_ADRESS)
         sock.sendto(c.START_MARKER, c.TARGET_ADRESS)
 
+        # Create package
+        package = list(range(c.PACKAGE_SIZE))
+        
+        # read first data (if there is none, while loop will not be executed)
         position = int(o_file.tell())
-        data_package = o_file.read(c.DATA_SIZE)
+        package[c.DATA_POS] = o_file.read(c.DATA_SIZE)
 
-        while data_package:
-            # Send data
-            package = position.to_bytes(c.POSITION_SIZE, byteorder="big") + data_package
-            util.package_send(sock, package)
-
+        while package[c.DATA_POS]:
+            # Create package
+            package[c.POSITION_POS] = position.to_bytes(c.POSITION_SIZE, byteorder="big")
+            
+            # Send package
+            if len(package) > c.PACKAGE_SIZE:
+                sock.sendto(c.SENDER_ERROR_MARKER, c.TARGET_ADRESS)
+                raise Exception(c.ERROR_PACKAGE_SIZE + package[:4].hex())
+            else:
+                sock.sendto(package, c.TARGET_ADRESS)
+            
             # Read next data
             position = int(o_file.tell())
-            data_package = o_file.read(c.DATA_SIZE)
+            package[c.DATA_POS] = o_file.read(c.DATA_SIZE)
 
         sock.sendto(c.END_MARKER, c.TARGET_ADRESS)
 
 
 
 elif side == "R":
-	sock.bind(c.TARGET_ADRESS)
-	
-	file_name, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
-	file_name = file_name.decode("utf-8")
+    sock.bind(c.TARGET_ADRESS)
 
-	# Create a file, where name is taken from sender
-	with open("output_" + file_name, "wb") as recieved_f:
-		package, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
+    file_name, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
+    file_name = file_name.decode("utf-8")
 
-		if package != c.START_MARKER:
-			sock.close()
-			raise Exception(c.ERROR_START_MARKER)
+    # Create a file, where name is taken from sender
+    with open("output_" + file_name, "wb") as recieved_f:
+        package, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
 
-		# Write data
-		while package != c.END_MARKER:
-			package, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
-			
-			if package == c.SENDER_ERROR_MARKER:
-				print(c.ERROR_SENDER_ERROR)
-				sock.close()
-				exit()
+        if package != c.START_MARKER:
+            sock.close()
+            raise Exception(c.ERROR_START_MARKER)
 
-			elif package != c.END_MARKER:
-				recieved_f.seek(int.from_bytes(package[0:c.POSITION_SIZE], byteorder="big"))
-				recieved_f.write(package[c.POSITION_SIZE:c.PACKAGE_SIZE])
+        # Write data
+        while True:
+            package, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
+            
+            if package == c.SENDER_ERROR_MARKER:
+                print(c.ERROR_SENDER_ERROR)
+                break
+
+            elif package == c.END_MARKER:
+                break
+            
+            else:
+                recieved_f.seek(int.from_bytes(package[c.POSITION_POS], byteorder="big"))
+                recieved_f.write(package[c.DATA_POS])
 
 else:
-	print("Exiting without doing anything...")
+    print("Exiting without doing anything...")
 
 sock.close()
 print("Done!")
