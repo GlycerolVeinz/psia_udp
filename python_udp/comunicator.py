@@ -5,6 +5,7 @@ import binascii
 
 # my libraries
 import const as c
+import util as u
 
 
 # UDP SOCKET
@@ -19,12 +20,12 @@ if side == "S":
     # Open binary file
     with open(FILE_NAME, "rb") as o_file:
         # send file name and start marker
-        sock.sendto(FILE_NAME.encode("utf-8"), c.TARGET_ADRESS)
-        sock.sendto(c.START_MARKER, c.TARGET_ADRESS)
-
-        # Create package
-        package = list(range(c.PACKAGE_SIZE))
+        package = u.create_packege(c.INFO_TYPE, None, FILE_NAME.encode("utf-8"))
+        u.send_package(sock, package, c.TARGET_ADRESS)
         
+        package = u.create_packege(c.MARKER_TYPE, None, c.START_MARKER)
+        u.send_package(sock, package, c.TARGET_ADRESS)
+
         # read first data (if there is none, while loop will not be executed)
         position = int(o_file.tell())
         package[c.DATA_POS] = o_file.read(c.DATA_SIZE)
