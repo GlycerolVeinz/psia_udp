@@ -36,7 +36,7 @@ if side == "S":
             # Send package
             if len(package) > c.PACKAGE_SIZE:
                 sock.sendto(c.SENDER_ERROR_MARKER, c.TARGET_ADRESS)
-                raise Exception(c.ERROR_PACKAGE_SIZE + package[:4].hex())
+                raise Exception(c.ERROR_PACKAGE_SIZE + str(len(package)))
             else:
                 sock.sendto(package, c.TARGET_ADRESS)
             
@@ -44,7 +44,10 @@ if side == "S":
             position = int(o_file.tell())
             package[c.DATA_POS] = o_file.read(c.DATA_SIZE)
 
+        # send end marker
         sock.sendto(c.END_MARKER, c.TARGET_ADRESS)
+        
+    # send file hash (sha256)
 
 
 
