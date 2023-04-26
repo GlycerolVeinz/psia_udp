@@ -13,13 +13,13 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 side = input("Select side [S/R] (S - sender, R - receiver):")
 
+# SENDER =============================================================
 if side == "S":
     FILE_NAME = input("Enter file name: ")
     
     sock.bind(c.SENDER_ADRESS)
     hash_num = hash.sha256()
 
-    # Open binary file
     with open(FILE_NAME, "rb") as o_file:
         # send file name and start marker
         package = u.create_packege(c.INFO_TYPE, None, FILE_NAME.encode("utf-8"))
@@ -34,7 +34,7 @@ if side == "S":
         hash_num.update(package[c.DATA_POS])
 
         while package[c.DATA_POS]:
-            # Send package
+            # Send package (this check is only for debuging)
             if len(package) > c.PACKAGE_SIZE:
                 package = u.create_packege(c.MARKER_TYPE, None, c.SENDER_ERROR_MARKER)
                 u.send_package(sock, package, c.TARGET_ADRESS)
@@ -45,6 +45,7 @@ if side == "S":
             # Read next data
             position = int(o_file.tell())
             package = u.create_packege(c.DATA_TYPE, position, o_file.read(c.DATA_SIZE))
+            hash_num.update(package[c.DATA_POS])
 
     # send end marker
     package = u.create_packege(c.MARKER_TYPE, None, c.END_MARKER)
@@ -57,7 +58,7 @@ if side == "S":
   
 
 
-
+# RECIEVER =============================================================
 elif side == "R":
     sock.bind(c.TARGET_ADRESS)
 

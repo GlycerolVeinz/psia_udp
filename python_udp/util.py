@@ -26,6 +26,7 @@ def create_packege(type : str, position : int, data):
     return package
 
 def recieve_package(size : int, sock : socket.socket):
+    sock.settimeout(const.TIMEOUT)
     package = sock.recv(size)
     crc = binascii.crc32(package[const.CRC_POS : const.PACKAGE_SIZE])
     if crc == int.from_bytes(package[const.CRC_POS], byteorder="big"):
@@ -41,7 +42,10 @@ def send_package(sock : socket.socket, package, target_address : tuple):
     
     # recieve acknowledge from receiver
     r_packet = recieve_package(const.PACKAGE_SIZE, sock)
+    tries = 0
     while True:
+        sleep(0.0001)
+        
         if r_packet == None:
             # send package again (crc is wrong)
             sock.sendto(package, target_address)
@@ -55,6 +59,8 @@ def send_package(sock : socket.socket, package, target_address : tuple):
             # send package again (unknown error)
             sock.sendto(package, target_address)
         
-        sleep(0.0001)
         r_packet = recieve_package(const.PACKAGE_SIZE, sock)
+        tries += 1
+        if tries > const.MAX_TRIES:
+            raise Exception(const.ERROR_MAX_TRIES)
     
