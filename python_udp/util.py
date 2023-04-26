@@ -16,16 +16,16 @@ def add_id(package, id):
     
     return add_id.id.to_bytes(const.ID_SIZE, byteorder="big")
     
-def create_packege(type, position, data):
+def create_packege(type : str, position : int, data):
     package = list(range(const.PACKAGE_SIZE))
     package[const.TYPE_POS] = type
-    package[const.POSITION_POS] = position
+    package[const.POSITION_POS] = position.to_bytes(const.POSITION_SIZE, byteorder="big")
     package[const.DATA_POS] = data
     package[const.ID_POS] = add_id(package, add_id.id)
     
     return package
 
-def recieve_package(size, sock : socket.socket):
+def recieve_package(size : int, sock : socket.socket):
     package = sock.recv(size)
     crc = binascii.crc32(package[const.CRC_POS : const.PACKAGE_SIZE])
     if crc == int.from_bytes(package[const.CRC_POS], byteorder="big"):

@@ -14,8 +14,10 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 side = input("Select side [S/R] (S - sender, R - receiver):")
 
 if side == "S":
-    sock.bind(c.SENDER_ADRESS)
     FILE_NAME = input("Enter file name: ")
+    
+    sock.bind(c.SENDER_ADRESS)
+    hash_num = hash.sha256()
 
     # Open binary file
     with open(FILE_NAME, "rb") as o_file:
@@ -28,27 +30,31 @@ if side == "S":
 
         # read first data (if there is none, while loop will not be executed)
         position = int(o_file.tell())
-        package[c.DATA_POS] = o_file.read(c.DATA_SIZE)
+        package = u.create_packege(c.DATA_TYPE, position, o_file.read(c.DATA_SIZE))
+        hash_num.update(package[c.DATA_POS])
 
         while package[c.DATA_POS]:
-            # Create package
-            package[c.POSITION_POS] = position.to_bytes(c.POSITION_SIZE, byteorder="big")
-            
             # Send package
             if len(package) > c.PACKAGE_SIZE:
-                sock.sendto(c.SENDER_ERROR_MARKER, c.TARGET_ADRESS)
+                package = u.create_packege(c.MARKER_TYPE, None, c.SENDER_ERROR_MARKER)
+                u.send_package(sock, package, c.TARGET_ADRESS)
                 raise Exception(c.ERROR_PACKAGE_SIZE + str(len(package)))
             else:
-                sock.sendto(package, c.TARGET_ADRESS)
+                u.send_package(sock, package, c.TARGET_ADRESS)
             
             # Read next data
             position = int(o_file.tell())
-            package[c.DATA_POS] = o_file.read(c.DATA_SIZE)
+            package = u.create_packege(c.DATA_TYPE, position, o_file.read(c.DATA_SIZE))
 
-        # send end marker
-        sock.sendto(c.END_MARKER, c.TARGET_ADRESS)
-        
+    # send end marker
+    package = u.create_packege(c.MARKER_TYPE, None, c.END_MARKER)
+    u.send_package(sock, package, c.TARGET_ADRESS)
+    
     # send file hash (sha256)
+    hash_num = hash_num.digest()
+    package = u.create_packege(c.INFO_TYPE, None, hash_num)
+    u.send_package(sock, package, c.TARGET_ADRESS)
+  
 
 
 
