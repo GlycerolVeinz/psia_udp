@@ -20,4 +20,18 @@ def send_package(sock : socket.socket, package, target_address : tuple):
     # send package
     sock.sendto(package, target_address)
     
+    # recieve acknowledge from receiver
+    r_packet, r_address = sock.recvfrom(const.PACKAGE_SIZE)
+    
+    while r_packet != const.ACKNOWLEDGE_MARKER:
+        if r_packet == const.DENIED_MARKER:
+            # send again if failed
+            sock.sendto(package, target_address)
+        elif r_packet == const.SENDER_ERROR_MARKER:
+            print("Error: sender had an error")
+            sock.close()
+            exit()
+        else:
+            raise Exception("Error: unknown error")
+        r_packet, r_address = sock.recvfrom(const.PACKAGE_SIZE)
     
