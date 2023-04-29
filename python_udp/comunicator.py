@@ -62,14 +62,16 @@ if side == "S":
 elif side == "R":
     sock.bind(c.TARGET_ADRESS)
 
-    file_name, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
-    file_name = file_name.decode("utf-8")
+    # Recieve file name
+    package = u.recieve_package_ack(c.PACKAGE_SIZE, sock) 
+    file_name = (package[c.DATA_POS]).decode("utf-8")
 
     # Create a file, where name is taken from sender
     with open("output_" + file_name, "wb") as recieved_f:
-        package, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
+        # Recieve start marker
+        package = u.recieve_package_ack(c.PACKAGE_SIZE, sock)
 
-        if package != c.START_MARKER:
+        if package[c.DATA_POS] != c.START_MARKER:
             sock.close()
             raise Exception(c.ERROR_START_MARKER)
 

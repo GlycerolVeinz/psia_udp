@@ -60,7 +60,24 @@ def send_package(sock : socket.socket, package, target_address : tuple):
             sock.sendto(package, target_address)
         
         r_packet = recieve_package(const.PACKAGE_SIZE, sock)
+        
         tries += 1
         if tries > const.MAX_TRIES:
+            sock.close()
+            package = create_packege(const.MARKER_TYPE, None, const.ERROR_MAX_TRIES)
+            sock.sendto(package, target_address)
             raise Exception(const.ERROR_MAX_TRIES)
+    
+def recieve_package_ack(size : int, sock : socket.socket, target_adress = const.SENDER_ADRESS):
+    sock.timeout(const.TIMEOUT)
+    package = recieve_package(size, sock)
+    
+    while package == None:
+        s_package = create_packege(const.MARKER_TYPE, None, const.DENIED_MARKER)
+        send_package(sock, s_package, target_adress)
+        
+        package = recieve_package(size, sock)
+    
+    s_package = create_packege(const.MARKER_TYPE, None, const.ACKNOWLEDGE_MARKER)
+    send_package(sock, s_package, target_adress)
     
