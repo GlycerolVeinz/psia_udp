@@ -3,11 +3,12 @@ import socket
 import binascii
 from time import sleep
 
-
+# FUNCTION =============================================================
 def add_crc(package):
     crc = binascii.crc32(package[const.CRC_SIZE : const.PACKAGE_SIZE])
     package[const.CRC_POS] = crc.to_bytes(const.CRC_SIZE, byteorder="big")
 
+# FUNCTION =============================================================
 def add_id(package, id):
     if not hasattr(add_id, "id"):
         add_id.id = 0
@@ -15,7 +16,8 @@ def add_id(package, id):
         add_id.id += 1
     
     return add_id.id.to_bytes(const.ID_SIZE, byteorder="big")
-    
+
+# FUNCTION ============================================================= 
 def create_packege(type : str, position : int, data):
     package = list(range(const.PACKAGE_SIZE))
     package[const.TYPE_POS] = type
@@ -25,6 +27,7 @@ def create_packege(type : str, position : int, data):
     
     return package
 
+# FUNCTION =============================================================
 def recieve_package(size : int, sock : socket.socket):
     sock.settimeout(const.TIMEOUT)
     package = sock.recv(size)
@@ -34,6 +37,7 @@ def recieve_package(size : int, sock : socket.socket):
     else:
         return None
 
+# FUNCTION =============================================================
 def send_package(sock : socket.socket, package, target_address : tuple):
     # add crc
     add_crc(package)
@@ -63,16 +67,23 @@ def send_package(sock : socket.socket, package, target_address : tuple):
         
         tries += 1
         if tries > const.MAX_TRIES:
-            sock.close()
-            package = create_packege(const.MARKER_TYPE, None, const.ERROR_MAX_TRIES)
+            package = create_packege(const.MARKER_TYPE, None, const.ERROR_SENDER_ERROR)
             sock.sendto(package, target_address)
+            sock.close()
             raise Exception(const.ERROR_MAX_TRIES)
     
+# FUNCTION =============================================================
 def recieve_package_ack(size : int, sock : socket.socket, target_adress = const.SENDER_ADRESS):
     sock.timeout(const.TIMEOUT)
     package = recieve_package(size, sock)
     
     while package == None:
+        # sender failed
+        if (package[const.TYPE_POS] == const.MARKER_TYPE) and (package[const.DATA_POS] == const.ERROR_SENDER_ERROR):
+            sock.close()
+            print(const.ERROR_SENDER_ERROR)
+            exit()
+        
         s_package = create_packege(const.MARKER_TYPE, None, const.DENIED_MARKER)
         send_package(sock, s_package, target_adress)
         
@@ -80,4 +91,6 @@ def recieve_package_ack(size : int, sock : socket.socket, target_adress = const.
     
     s_package = create_packege(const.MARKER_TYPE, None, const.ACKNOWLEDGE_MARKER)
     send_package(sock, s_package, target_adress)
+    
+    return package
     
