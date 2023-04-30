@@ -71,15 +71,15 @@ elif side == "R":
         # Recieve start marker
         package = u.recieve_package_ack(c.PACKAGE_SIZE, sock)
 
-        if package[c.DATA_POS] != c.START_MARKER:
+        if (package[c.DATA_POS] != c.START_MARKER) and (package[c.TYPE_POS] == c.MARKER_TYPE):
             sock.close()
             raise Exception(c.ERROR_START_MARKER)
 
         # Write data
         while True:
-            package, sender_address = sock.recvfrom(c.PACKAGE_SIZE)
+            package = u.recieve_package_ack(c.PACKAGE_SIZE, sock)
             
-            if package == c.SENDER_ERROR_MARKER:
+            if (package[c.DATA_POS] == c.SENDER_ERROR_MARKER) and (package[c.TYPE_POS] == c.MARKER_TYPE):
                 print(c.ERROR_SENDER_ERROR)
                 break
 

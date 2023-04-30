@@ -1,12 +1,12 @@
-import const
+import const as c
 import socket
 import binascii
 from time import sleep
 
 # FUNCTION =============================================================
 def add_crc(package):
-    crc = binascii.crc32(package[const.CRC_SIZE : const.PACKAGE_SIZE])
-    package[const.CRC_POS] = crc.to_bytes(const.CRC_SIZE, byteorder="big")
+    crc = binascii.crc32(package[c.CRC_SIZE : c.PACKAGE_SIZE])
+    package[c.CRC_POS] = crc.to_bytes(c.CRC_SIZE, byteorder="big")
 
 # FUNCTION =============================================================
 def add_id(package, id):
@@ -15,24 +15,24 @@ def add_id(package, id):
     else:
         add_id.id += 1
     
-    return add_id.id.to_bytes(const.ID_SIZE, byteorder="big")
+    return add_id.id.to_bytes(c.ID_SIZE, byteorder="big")
 
 # FUNCTION ============================================================= 
 def create_packege(type : str, position : int, data):
-    package = list(range(const.PACKAGE_SIZE))
-    package[const.TYPE_POS] = type
-    package[const.POSITION_POS] = position.to_bytes(const.POSITION_SIZE, byteorder="big")
-    package[const.DATA_POS] = data
-    package[const.ID_POS] = add_id(package, add_id.id)
+    package = list(range(c.PACKAGE_SIZE))
+    package[c.TYPE_POS] = type
+    package[c.POSITION_POS] = position.to_bytes(c.POSITION_SIZE, byteorder="big")
+    package[c.DATA_POS] = data
+    package[c.ID_POS] = add_id(package, add_id.id)
     
     return package
 
 # FUNCTION =============================================================
 def recieve_package(size : int, sock : socket.socket):
-    sock.settimeout(const.TIMEOUT)
+    sock.settimeout(c.TIMEOUT)
     package = sock.recv(size)
-    crc = binascii.crc32(package[const.CRC_POS : const.PACKAGE_SIZE])
-    if crc == int.from_bytes(package[const.CRC_POS], byteorder="big"):
+    crc = binascii.crc32(package[c.CRC_POS : c.PACKAGE_SIZE])
+    if crc == int.from_bytes(package[c.CRC_POS], byteorder="big"):
         return package
     else:
         return None
@@ -45,7 +45,7 @@ def send_package(sock : socket.socket, package, target_address : tuple):
     sock.sendto(package, target_address)
     
     # recieve acknowledge from receiver
-    r_packet = recieve_package(const.PACKAGE_SIZE, sock)
+    r_packet = recieve_package(c.PACKAGE_SIZE, sock)
     tries = 0
     while True:
         sleep(0.0001)
@@ -53,44 +53,47 @@ def send_package(sock : socket.socket, package, target_address : tuple):
         if r_packet == None:
             # send package again (crc is wrong)
             sock.sendto(package, target_address)
-        elif r_packet[const.TYPE_POS] != const.MARKER_TYPE:
+        elif r_packet[c.TYPE_POS] != c.MARKER_TYPE:
             # send package again (package type is wrong)
             sock.sendto(package, target_address)
-        elif r_packet[const.DATA_POS] == const.ACKNOWLEDGE_MARKER:
+        elif r_packet[c.DATA_POS] == c.ACKNOWLEDGE_MARKER:
             # acknowledge is correct
             break
         else:
             # send package again (unknown error)
             sock.sendto(package, target_address)
         
-        r_packet = recieve_package(const.PACKAGE_SIZE, sock)
+        r_packet = recieve_package(c.PACKAGE_SIZE, sock)
         
         tries += 1
-        if tries > const.MAX_TRIES:
-            package = create_packege(const.MARKER_TYPE, None, const.ERROR_SENDER_ERROR)
+        if tries > c.MAX_TRIES:
+            package = create_packege(c.MARKER_TYPE, None, c.ERROR_SENDER_ERROR)
             sock.sendto(package, target_address)
             sock.close()
-            raise Exception(const.ERROR_MAX_TRIES)
+            raise Exception(c.ERROR_MAX_TRIES)
     
 # FUNCTION =============================================================
-def recieve_package_ack(size : int, sock : socket.socket, target_adress = const.SENDER_ADRESS):
-    sock.timeout(const.TIMEOUT)
+def recieve_package_ack(size : int, sock : socket.socket, target_adress = c.SENDER_ADRESS):
+    sock.timeout(c.TIMEOUT)
     package = recieve_package(size, sock)
     
     while package == None:
         # sender failed
-        if (package[const.TYPE_POS] == const.MARKER_TYPE) and (package[const.DATA_POS] == const.ERROR_SENDER_ERROR):
+        if (package[c.TYPE_POS] == c.MARKER_TYPE) and (package[c.DATA_POS] == c.ERROR_SENDER_ERROR):
             sock.close()
-            print(const.ERROR_SENDER_ERROR)
+            print(c.ERROR_SENDER_ERROR)
             exit()
         
-        s_package = create_packege(const.MARKER_TYPE, None, const.DENIED_MARKER)
+        s_package = create_packege(c.MARKER_TYPE, None, c.DENIED_MARKER)
         send_package(sock, s_package, target_adress)
         
         package = recieve_package(size, sock)
     
-    s_package = create_packege(const.MARKER_TYPE, None, const.ACKNOWLEDGE_MARKER)
+    s_package = create_packege(c.MARKER_TYPE, None, c.ACKNOWLEDGE_MARKER)
     send_package(sock, s_package, target_adress)
     
     return package
-    
+
+def package_and_send(type : str, position : int, data, sock : socket.socket, target_adress : tuple):
+    package = create_packege(type, position, data)
+    send_package(sock, package, target_adress)
