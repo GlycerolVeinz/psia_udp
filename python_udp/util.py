@@ -5,11 +5,12 @@ from time import sleep
 
 # FUNCTION =============================================================
 def add_crc(package):
-    crc = binascii.crc32(package[c.CRC_SIZE : c.PACKAGE_SIZE])
+    crc = binascii.crc32(bytes(package[c.CRC_SIZE:c.PACKAGE_SIZE]))
     package[c.CRC_POS] = crc.to_bytes(c.CRC_SIZE, byteorder="big")
+    return package
 
 # FUNCTION =============================================================
-def add_id(package, id):
+def add_id(package):
     if not hasattr(add_id, "id"):
         add_id.id = 0
     else:
@@ -21,9 +22,11 @@ def add_id(package, id):
 def create_packege(type : str, position : int, data):
     package = list(range(c.PACKAGE_SIZE))
     package[c.TYPE_POS] = type
-    package[c.POSITION_POS] = position.to_bytes(c.POSITION_SIZE, byteorder="big")
+    if position != None:
+        package[c.POSITION_POS] = position.to_bytes(c.POSITION_SIZE, byteorder="big")
     package[c.DATA_POS] = data
-    package[c.ID_POS] = add_id(package, add_id.id)
+    package[c.ID_POS] = add_id(package)
+    package = add_crc(package)
     
     return package
 
@@ -39,10 +42,7 @@ def recieve_package(size : int, sock : socket.socket):
 
 # FUNCTION =============================================================
 def send_package(sock : socket.socket, package, target_address : tuple):
-    # add crc
-    add_crc(package)
-    # send package
-    sock.sendto(package, target_address)
+    sock.sendto(bytes(package), target_address)
     
     # recieve acknowledge from receiver
     r_packet = recieve_package(c.PACKAGE_SIZE, sock)
@@ -74,7 +74,7 @@ def send_package(sock : socket.socket, package, target_address : tuple):
     
 # FUNCTION =============================================================
 def recieve_package_ack(size : int, sock : socket.socket, target_adress = c.SENDER_ADRESS):
-    sock.timeout(c.TIMEOUT)
+    sock.settimeout(c.TIMEOUT)
     package = recieve_package(size, sock)
     
     while package == None:
@@ -94,6 +94,3 @@ def recieve_package_ack(size : int, sock : socket.socket, target_adress = c.SEND
     
     return package
 
-def package_and_send(type : str, position : int, data, sock : socket.socket, target_adress : tuple):
-    package = create_packege(type, position, data)
-    send_package(sock, package, target_adress)

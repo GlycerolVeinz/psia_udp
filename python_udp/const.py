@@ -6,7 +6,7 @@ POSITION_SIZE = 4
 ID_SIZE = 4
 DATA_SIZE = PACKAGE_SIZE - POSITION_SIZE - CRC_SIZE - ID_SIZE - TYPE_SIZE
 
-TIMEOUT = 5
+TIMEOUT = 10
 MAX_TRIES = 20
 
 # POSITIONSS IN PACKAGE
@@ -17,10 +17,10 @@ POSITION_POS = slice(TYPE_SIZE + CRC_SIZE + ID_SIZE, TYPE_SIZE + CRC_SIZE + ID_S
 DATA_POS = slice(TYPE_SIZE + CRC_SIZE + POSITION_SIZE + ID_SIZE, PACKAGE_SIZE)
 
 # PACKAGE TYPES
-INFO_TYPE = "I"
-MARKER_TYPE = "M"
-HASH_TYPE = "H"
-DATA_TYPE = "D"
+INFO_TYPE = b"I"
+MARKER_TYPE = b"M"
+HASH_TYPE = b"H"
+DATA_TYPE = b"D"
 
 # MARKERS
 START_MARKER = b"//START//"
@@ -41,7 +41,7 @@ TARGET_ADRESS = (TARGET_IP, TARGET_PORT)
 
 
 # ERROR MESSAGES
-ERROR_PACKAGE_SIZE = "Error: package size is bigger than maximum package size"
-ERROR_START_MARKER = "Error: start marker is not correct"
-ERROR_SENDER_ERROR = "Error: sender had an error"
-ERROR_MAX_TRIES = "Error: maximum tries to recieve acknowledge reached"
+ERROR_PACKAGE_SIZE = b"Error: package size is bigger than maximum package size"
+ERROR_START_MARKER = b"Error: start marker is not correct"
+ERROR_SENDER_ERROR = b"Error: sender had an error"
+ERROR_MAX_TRIES = b"Error: maximum tries to recieve acknowledge reached"
