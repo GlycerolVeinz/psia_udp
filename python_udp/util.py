@@ -20,7 +20,6 @@ def add_id(package):
 
 # FUNCTION ============================================================= 
 def create_packege(type : str, position : int, data):
-    package = list(range(c.PACKAGE_SIZE))
     package[c.TYPE_POS] = type
     if position != None:
         package[c.POSITION_POS] = position.to_bytes(c.POSITION_SIZE, byteorder="big")
