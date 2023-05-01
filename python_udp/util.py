@@ -33,7 +33,7 @@ def create_packege(type : str, position : int, data):
 # FUNCTION =============================================================
 def recieve_package(size : int, sock : socket.socket):
     sock.settimeout(c.TIMEOUT)
-    package = bytearray(sock.recv(size))
+    package = bytes(sock.recv(size))
     crc = binascii.crc32(bytes(package[c.CRC_SIZE : c.PACKAGE_SIZE]))
     if crc == int.from_bytes(package[c.CRC_POS], byteorder="big"):
         return package
@@ -41,11 +41,16 @@ def recieve_package(size : int, sock : socket.socket):
         return None
 
 # FUNCTION =============================================================
-def send_package(sock : socket.socket, package, target_address : tuple):
+def send_package(sock : socket.socket, package : bytes, target_address : tuple):
     sock.sendto(bytes(package), target_address)
     
     # recieve acknowledge from receiver
-    r_packet = recieve_package(c.PACKAGE_SIZE, sock)
+    try:
+        r_packet = recieve_package(c.PACKAGE_SIZE, sock)
+    except TimeoutError:
+        # send again if timeout
+        sock.sendto(package, target_address)
+    
     tries = 0
     while True:
         sleep(0.0001)
@@ -58,7 +63,6 @@ def send_package(sock : socket.socket, package, target_address : tuple):
             sock.sendto(package, target_address)
         elif r_packet[c.DATA_POS] == c.ACKNOWLEDGE_MARKER:
             # acknowledge is correct
-            print("acknowledge recieved")
             break
         else:
             # send package again (unknown error)
@@ -92,7 +96,6 @@ def recieve_package_ack(size : int, sock : socket.socket, target_adress = c.SEND
     
     s_package = create_packege(c.MARKER_TYPE, None, c.ACKNOWLEDGE_MARKER)
     sock.sendto(s_package, target_adress)
-    print("acknowledge send")
     
     return package
 

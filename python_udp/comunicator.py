@@ -62,6 +62,7 @@ if side == "S":
 # RECIEVER =============================================================
 elif side == "R":
     sock.bind(c.TARGET_ADRESS)
+    hash_num = hash.sha256()
 
     # Recieve file name
     package = u.recieve_package_ack(c.PACKAGE_SIZE, sock) 
@@ -84,12 +85,22 @@ elif side == "R":
                 print(c.ERROR_SENDER_ERROR)
                 break
 
-            elif package == c.END_MARKER:
+            elif package[c.DATA_POS] == c.END_MARKER:
                 break
             
             else:
                 recieved_f.seek(int.from_bytes(package[c.POSITION_POS], byteorder="big"))
                 recieved_f.write(package[c.DATA_POS])
+                hash_num.update(package[c.DATA_POS])
+            
+    # Recieve and compare hash
+    hash_num = hash_num.digest()
+    package = u.recieve_package_ack(c.PACKAGE_SIZE, sock)
+    if package[c.DATA_POS] != hash_num:
+        # reset start and recieve
+        print("Hash is wrong!")
+        pass
+    
 
 else:
     print("Exiting without doing anything...")
