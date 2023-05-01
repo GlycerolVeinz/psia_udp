@@ -20,6 +20,7 @@ def add_id(package):
 
 # FUNCTION ============================================================= 
 def create_packege(type : str, position : int, data):
+    package = bytearray(c.PACKAGE_SIZE)
     package[c.TYPE_POS] = type
     if position != None:
         package[c.POSITION_POS] = position.to_bytes(c.POSITION_SIZE, byteorder="big")
@@ -32,8 +33,8 @@ def create_packege(type : str, position : int, data):
 # FUNCTION =============================================================
 def recieve_package(size : int, sock : socket.socket):
     sock.settimeout(c.TIMEOUT)
-    package = sock.recv(size)
-    crc = binascii.crc32(package[c.CRC_POS : c.PACKAGE_SIZE])
+    package = bytearray(sock.recv(size))
+    crc = binascii.crc32(bytes(package[c.CRC_SIZE : c.PACKAGE_SIZE]))
     if crc == int.from_bytes(package[c.CRC_POS], byteorder="big"):
         return package
     else:
@@ -57,6 +58,7 @@ def send_package(sock : socket.socket, package, target_address : tuple):
             sock.sendto(package, target_address)
         elif r_packet[c.DATA_POS] == c.ACKNOWLEDGE_MARKER:
             # acknowledge is correct
+            print("acknowledge recieved")
             break
         else:
             # send package again (unknown error)
@@ -84,12 +86,13 @@ def recieve_package_ack(size : int, sock : socket.socket, target_adress = c.SEND
             exit()
         
         s_package = create_packege(c.MARKER_TYPE, None, c.DENIED_MARKER)
-        send_package(sock, s_package, target_adress)
+        sock.sendto(s_package, target_adress)
         
         package = recieve_package(size, sock)
     
     s_package = create_packege(c.MARKER_TYPE, None, c.ACKNOWLEDGE_MARKER)
-    send_package(sock, s_package, target_adress)
+    sock.sendto(s_package, target_adress)
+    print("acknowledge send")
     
     return package
 
