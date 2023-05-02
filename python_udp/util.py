@@ -1,7 +1,7 @@
 import const as c
 import socket
 import binascii
-from time import sleep
+
 
 # FUNCTION =============================================================
 def add_crc(package):
@@ -43,33 +43,34 @@ def recieve_package(size : int, sock : socket.socket):
 # FUNCTION =============================================================
 def send_package(sock : socket.socket, package : bytes, target_address : tuple):
     sock.sendto(bytes(package), target_address)
+    r_packet = bytes()
+    tries = 0
+    
+    while True:
+        try:
+            timed_out = False
+            r_packet = recieve_package(c.PACKAGE_SIZE, sock)
+        except TimeoutError:
+            # send again if timeout
+            timed_out = True
+            sock.sendto(package, target_address)
+            print("sended again")
     
     # recieve acknowledge from receiver
-    try:
-        r_packet = recieve_package(c.PACKAGE_SIZE, sock)
-    except TimeoutError:
-        # send again if timeout
-        sock.sendto(package, target_address)
-    
-    tries = 0
-    while True:
-        sleep(0.0001)
-        
-        if r_packet == None:
-            # send package again (crc is wrong)
-            sock.sendto(package, target_address)
-        elif r_packet[c.TYPE_POS] != c.MARKER_TYPE:
-            # send package again (package type is wrong)
-            sock.sendto(package, target_address)
-        elif r_packet[c.DATA_POS] == c.ACKNOWLEDGE_MARKER:
-            # acknowledge is correct
-            break
-        else:
-            # send package again (unknown error)
-            sock.sendto(package, target_address)
-        
-        r_packet = recieve_package(c.PACKAGE_SIZE, sock)
-        
+        if not timed_out:
+            if r_packet == None:
+                # send package again (crc is wrong)
+                sock.sendto(package, target_address)
+            elif r_packet[c.TYPE_POS] != c.MARKER_TYPE:
+                # send package again (package type is wrong)
+                sock.sendto(package, target_address)
+            elif r_packet[c.DATA_POS] == c.ACKNOWLEDGE_MARKER:
+                # acknowledge is correct
+                break
+            else:
+                # send package again (unknown error)
+                sock.sendto(package, target_address)
+            
         tries += 1
         if tries > c.MAX_TRIES:
             package = create_packege(c.MARKER_TYPE, None, c.ERROR_SENDER_ERROR)

@@ -98,8 +98,7 @@ elif side == "R":
     package = u.recieve_package_ack(c.PACKAGE_SIZE, sock)
     if package[c.DATA_POS] != hash_num:
         # reset start and recieve
-        print("Hash is wrong!")
-        pass
+        raise Exception("Hash is wrong!")
     
 
 else:
