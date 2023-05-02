@@ -10,7 +10,7 @@ def add_crc(package):
     return package
 
 # FUNCTION =============================================================
-def add_id(package):
+def add_id():
     if not hasattr(add_id, "id"):
         add_id.id = 0
     else:
@@ -25,7 +25,7 @@ def create_packege(type : str, position : int, data):
     if position != None:
         package[c.POSITION_POS] = position.to_bytes(c.POSITION_SIZE, byteorder="big")
     package[c.DATA_POS] = data
-    package[c.ID_POS] = add_id(package)
+    package[c.ID_POS] = add_id()
     package = add_crc(package)
     
     return package
