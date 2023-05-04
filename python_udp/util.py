@@ -1,6 +1,7 @@
 import const as c
 import socket
 import binascii
+from time import sleep
 
 
 # FUNCTION =============================================================
@@ -19,20 +20,20 @@ def add_id():
     return add_id.id.to_bytes(c.ID_SIZE, byteorder="big")
 
 # FUNCTION ============================================================= 
-def create_packege(type : str, position : int, data):
+def create_packege(type : str, position : int, data, id = add_id()):
     package = bytearray(c.PACKAGE_SIZE)
     package[c.TYPE_POS] = type
     if position != None:
         package[c.POSITION_POS] = position.to_bytes(c.POSITION_SIZE, byteorder="big")
     package[c.DATA_POS] = data
-    package[c.ID_POS] = add_id()
+    package[c.ID_POS] = id
     package = add_crc(package)
     
     return package
 
 # FUNCTION =============================================================
-def recieve_package(size : int, sock : socket.socket):
-    sock.settimeout(c.TIMEOUT)
+def recieve_package(size : int, sock : socket.socket, time_out = c.TIMEOUT):
+    sock.settimeout(time_out)
     package = bytes(sock.recv(size))
     crc = binascii.crc32(bytes(package[c.CRC_SIZE : c.PACKAGE_SIZE]))
     if crc == int.from_bytes(package[c.CRC_POS], byteorder="big"):
@@ -49,7 +50,7 @@ def send_package(sock : socket.socket, package : bytes, target_address : tuple):
     while True:
         try:
             timed_out = False
-            r_packet = recieve_package(c.PACKAGE_SIZE, sock)
+            r_packet = recieve_package(c.PACKAGE_SIZE, sock, 2)
         except TimeoutError:
             # send again if timeout
             timed_out = True
@@ -77,7 +78,7 @@ def send_package(sock : socket.socket, package : bytes, target_address : tuple):
             sock.sendto(package, target_address)
             sock.close()
             raise Exception(c.ERROR_MAX_TRIES)
-    
+
 # FUNCTION =============================================================
 def recieve_package_ack(size : int, sock : socket.socket, target_adress = c.SENDER_ADRESS):
     sock.settimeout(c.TIMEOUT)
