@@ -29,7 +29,7 @@ def create_packege(type : str, position : int, data, id = add_id()):
     package[c.ID_POS] = id
     package = add_crc(package)
     
-    return package
+    return bytes(package)
 
 # FUNCTION =============================================================
 def recieve_package(size : int, sock : socket.socket, time_out = c.TIMEOUT):
@@ -55,7 +55,7 @@ def send_package(sock : socket.socket, package : bytes, target_address : tuple):
             # send again if timeout
             timed_out = True
             sock.sendto(package, target_address)
-            print("sended again")
+     
     
     # recieve acknowledge from receiver
         if not timed_out:
@@ -81,7 +81,6 @@ def send_package(sock : socket.socket, package : bytes, target_address : tuple):
 
 # FUNCTION =============================================================
 def recieve_package_ack(size : int, sock : socket.socket, target_adress = c.SENDER_ADRESS):
-    sock.settimeout(c.TIMEOUT)
     package = recieve_package(size, sock)
     
     while package == None:
@@ -115,11 +114,16 @@ def send_packages_burst(sock : socket.socket, packages : list, target_address : 
 
         for pack in packages_send_id:
             if not packages_send_id[pack]:
-                r_package = recieve_package(c.PACKAGE_SIZE, sock)
-        
+                try:
+                    r_package = recieve_package(c.PACKAGE_SIZE, sock, 2)
+                except TimeoutError:
+                    r_package = None
+                    
         if (r_package[c.TYPE_POS] == c.MARKER_TYPE) and (r_package != None) and (r_package[c.DATA_POS] == c.ACKNOWLEDGE_MARKER):
             packages_send_id[r_package[c.ID_POS]] = True
         
         for pack in packages_send_id:
             if not packages_send_id[pack]:
                 sock.sendto(packages[pack], target_address)
+
+# FUNCTION =============================================================
