@@ -101,3 +101,23 @@ def recieve_package_ack(size : int, sock : socket.socket, target_adress = c.SEND
     
     return package
 
+# FUNCTION =============================================================
+def send_packages_burst(sock : socket.socket, packages : list, target_address : tuple):
+    packages_send_id = dict()
+    for pack in packages:
+        packages_send_id[pack[c.ID_POS]] = False
+        sock.sendto(pack, target_address)
+        
+    # get acknowledge, resend if not recieved
+    while True:
+        if all(packages_send_id.values()):
+            break
+
+        r_package = recieve_package(c.PACKAGE_SIZE, sock)
+        
+        if (r_package[c.TYPE_POS] == c.MARKER_TYPE) and (r_package != None) and (r_package[c.DATA_POS] == c.ACKNOWLEDGE_MARKER):
+            packages_send_id[r_package[c.ID_POS]] = True
+        
+        for pack in packages_send_id:
+            if not packages_send_id[pack]:
+                sock.sendto(packages[pack], target_address)

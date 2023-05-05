@@ -1,7 +1,7 @@
 # udp and network dependencies
 import socket
 import hashlib as hash
-import binascii
+
 
 # my libraries
 import const as c
@@ -41,15 +41,15 @@ if side == "S":
 
             if packages[i][c.DATA_POS] == b"":
                 last = True
-
+            
+            i += 1
             # if sending window is full
             if len(packages) == c.SENDING_WINDOW or last:
-                for package in packages:
-                    sock.sendto(package, c.TARGET_ADRESS)
-                
-
-            i += 1
-            break
+                # send burst
+                u.send_packages_burst(sock, packages, c.TARGET_ADRESS)
+                            
+            if last:
+                break
 
     # send end marker
     package = u.create_packege(c.MARKER_TYPE, None, c.END_MARKER)
