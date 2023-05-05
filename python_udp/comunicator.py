@@ -32,21 +32,20 @@ if side == "S":
         u.send_package(sock, package, c.TARGET_ADRESS)
 
         # read data
-        i = 0
         last = False
         while True:
             position = int(o_file.tell())
-            packages[i] = (u.create_packege(c.DATA_TYPE, position, o_file.read(c.DATA_SIZE)))
+            packages.append(u.create_packege(c.DATA_TYPE, position, o_file.read(c.DATA_SIZE)))
             hash_num.update(package[c.DATA_POS])
 
-            if packages[i][c.DATA_POS] == b"":
+            if packages[-1][c.DATA_POS] == b"":
                 last = True
             
-            i += 1
             # if sending window is full
             if len(packages) == c.SENDING_WINDOW or last:
                 # send burst
                 u.send_packages_burst(sock, packages, c.TARGET_ADRESS)
+                packages = list()
                             
             if last:
                 break
@@ -81,6 +80,9 @@ elif side == "R":
 
         # Write data
         while True:
+            
+            
+            
             package = u.recieve_package_ack(c.PACKAGE_SIZE, sock)
 
             if (package[c.DATA_POS] == c.SENDER_ERROR_MARKER) and (package[c.TYPE_POS] == c.MARKER_TYPE):
@@ -100,7 +102,6 @@ elif side == "R":
     hash_num = hash_num.digest()
     package = u.recieve_package_ack(c.PACKAGE_SIZE, sock)
     if package[c.DATA_POS] != hash_num:
-        # reset start and recieve
         raise Exception("Hash is wrong!")
 
 
