@@ -115,7 +115,7 @@ def send_packages_burst(sock : socket.socket, packages : list, target_address : 
         for pack in packages_send_id:
             if not packages_send_id[pack]:
                 try:
-                    r_package = recieve_package(c.PACKAGE_SIZE, sock, 2)
+                    r_package = recieve_package(c.PACKAGE_SIZE, sock, 0.5)
                 except TimeoutError:
                     r_package = None
                     

@@ -25,11 +25,11 @@ if side == "S":
 
     with open(FILE_NAME, "rb") as o_file:
         # send file name and start marker
-        # package = u.create_packege(c.INFO_TYPE, None, FILE_NAME.encode("utf-8"))
-        # u.send_package(sock, package, c.TARGET_ADRESS)
+        package = u.create_packege(c.INFO_TYPE, None, FILE_NAME.encode("utf-8"))
+        u.send_package(sock, package, c.TARGET_ADRESS)
 
-        # package = u.create_packege(c.MARKER_TYPE, None, c.START_MARKER)
-        # u.send_package(sock, package, c.TARGET_ADRESS)
+        package = u.create_packege(c.MARKER_TYPE, None, c.START_MARKER)
+        u.send_package(sock, package, c.TARGET_ADRESS)
 
         # read data
         last = False
@@ -79,16 +79,29 @@ elif side == "R":
         # Write data
         packages = list()
         while True:
-            try:
-                package = u.recieve_package(c.PACKAGE_SIZE, sock)
-            except TimeoutError:
-                package = None
-            if package[c.TYPE_POS] == c.MARKER_TYPE and package[c.DATA_POS] == c.END_MARKER:
-                last = True
-            packages.append(package)
+            sending = True
+            while sending:    
+                try:
+                    package = u.recieve_package(c.PACKAGE_SIZE, sock, 0.1)
+                except TimeoutError:
+                    sending = False
+                
+                if package[c.TYPE_POS] == c.MARKER_TYPE and package[c.DATA_POS] == c.END_MARKER:
+                    last = True
+                else:
+                    packages.append(package)
                 
             for pack in packages:
-                pass
+                if pack[c.TYPE_POS] == c.MARKER_TYPE and pack[c.DATA_POS] == c.ERROR_SENDER_ERROR:
+                    sock.close()
+                    print(c.ERROR_SENDER_ERROR)
+                    exit()
+                elif pack[c.TYPE_POS] != c.DATA_TYPE:
+                    u.create_packege(c.MARKER_TYPE, None, c.DENIED_MARKER)
+                    sock.sendto(package, c.SENDER_ADRESS)
+                    
+                
+                    
             
             if last:    
                 break
