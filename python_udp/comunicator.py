@@ -61,7 +61,7 @@ if side == "S":
                 if (r_package[c.TYPE_POS] == c.MARKER_TYPE) and (r_package[c.DATA_POS] == c.ACKNOWLEDGE_MARKER) and (r_package[c.ID_POS] == pack[c.ID_POS]):
                     if pack[c.ID_POS] == end_package[c.ID_POS]:
                         last = True
-                    packages.remove(pack)
+                    packages = [x for x in packages if x[c.ID_POS] != r_package[c.ID_POS]]
                 
                                      
             if last and len(packages) == 0:
@@ -93,30 +93,37 @@ elif side == "R":
 
         # Write data
         packages = list()
+        last = False
+        recieving = True
         while True:
-            sending = True
-            while sending:    
+            # recieve package
+            if recieving:
                 try:
-                    package = u.recieve_package(c.PACKAGE_SIZE, sock, 0.1)
+                    package = u.recieve_package_ack(c.PACKAGE_SIZE, sock, 0.1)
                 except TimeoutError:
-                    sending = False
-                
-                if package[c.TYPE_POS] == c.MARKER_TYPE and package[c.DATA_POS] == c.END_MARKER:
-                    last = True
-                else:
-                    packages.append(package)
-                
+                    package = None
+
+                packages.append(package)
+
+            # check validity of package
             for pack in packages:
-                if pack[c.TYPE_POS] == c.MARKER_TYPE and pack[c.DATA_POS] == c.ERROR_SENDER_ERROR:
+                if (pack is None):
+                    s_package = u.create_packege(c.MARKER_TYPE, None, c.DENIED_MARKER)
+                    sock.sendto(s_package, c.SENDER_ADRESS)
+                    continue
+                elif (pack[c.TYPE_POS] == c.MARKER_TYPE) and (pack[c.DATA_POS] == c.SENDER_ERROR_MARKER):
                     sock.close()
-                    print(c.ERROR_SENDER_ERROR)
-                    exit()
-                elif pack[c.TYPE_POS] != c.DATA_TYPE:
-                    u.create_packege(c.MARKER_TYPE, None, c.DENIED_MARKER)
-                    sock.sendto(package, c.SENDER_ADRESS)
+                    exit(c.ERROR_SENDER_ERROR)
+                elif (pack[c.TYPE_POS] == c.MARKER_TYPE) and (pack[c.DATA_POS] == c.END_MARKER):
+                    recieving = False
+                elif (pack[c.TYPE_POS] != c.DATA_TYPE):
+                    continue
                     
+                # send acknowledge
+                s_package = u.create_packege(c.MARKER_TYPE, None, c.ACKNOWLEDGE_MARKER, id = pack[c.ID_POS])    
                 
                     
+                # write data to file
             
             if last:    
                 break
