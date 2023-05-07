@@ -31,25 +31,40 @@ if side == "S":
         package = u.create_packege(c.MARKER_TYPE, None, c.START_MARKER)
         u.send_package(sock, package, c.TARGET_ADRESS)
 
-        # read data
+        # read and send data
         last = False
+        reading = True
         while True:
-            position = int(o_file.tell())
-            package = u.create_packege(c.DATA_TYPE, position, o_file.read(c.DATA_SIZE))
-            packages.append(package)
-            hash_num.update(package[c.DATA_POS])
+            # read data
+            if len(packages) != c.SENDING_WINDOW and reading:
+                position = int(o_file.tell())
+                package = u.create_packege(c.DATA_TYPE, position, o_file.read(c.DATA_SIZE))
+                hash_num.update(package[c.DATA_POS])
 
-            if packages[-1][c.DATA_POS] == b"":
-                packages.append(u.create_packege(c.MARKER_TYPE, None, c.END_MARKER))
-                last = True
+                if (packages[-1][c.DATA_POS] == b"") or (len(packages[-1]) != c.PACKAGE_SIZE):
+                    end_package = u.create_packege(c.MARKER_TYPE, None, c.END_MARKER)
+                    packages.append(end_package)
+                    reading = False
+                else:
+                    packages.append(package)
             
-            # if sending window is full
-            if len(packages) == c.SENDING_WINDOW or last:
-                # send burst
-                u.send_packages_burst(sock, packages, c.TARGET_ADRESS)
-                packages = list()
-                            
-            if last:
+            # send data
+            for pack in packages:
+                sock.sendto(pack, c.TARGET_ADRESS)
+            
+                # get acknowledge
+                try:
+                    r_package = u.recieve_package_ack(c.PACKAGE_SIZE, sock, 0.1)
+                except TimeoutError:
+                    r_package = None
+                    
+                if (r_package[c.TYPE_POS] == c.MARKER_TYPE) and (r_package[c.DATA_POS] == c.ACKNOWLEDGE_MARKER) and (r_package[c.ID_POS] == pack[c.ID_POS]):
+                    if pack[c.ID_POS] == end_package[c.ID_POS]:
+                        last = True
+                    packages.remove(pack)
+                
+                                     
+            if last and len(packages) == 0:
                 break
 
     # send file hash (sha256)
