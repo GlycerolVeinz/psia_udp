@@ -16,7 +16,7 @@ side = input("Select side [S/R] (S - sender, R - receiver):")
 # SENDER =============================================================
 if side == "S":
     # FILE_NAME = input("Enter file name: ")
-    FILE_NAME = "vit_small.ppm"
+    FILE_NAME = "big_space.png"
 
     sock.bind(c.SENDER_ADRESS)
     hash_num = hash.sha256()

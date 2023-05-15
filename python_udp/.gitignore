@@ -1,2 +1,6 @@
 *.json
 ./__pycache__/
+*.png
+*.ppm
+*.jpg
+*.jpeg
